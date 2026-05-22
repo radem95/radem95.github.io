@@ -131,170 +131,94 @@
         </header>
 
         <div class="card">
-            <label>Live Layout Preview</label>
+            <label>Live Label Preview</label>
             <div class="preview-container">
                 <canvas id="labelCanvas" width="400" height="500"></canvas>
             </div>
         </div>
 
-        <!-- User Inputs -->
         <div class="card">
+            <!-- Inputs for Department, Label, Box Info, etc -->
             <div class="form-group">
                 <label for="dept">Department Name</label>
                 <input type="text" id="dept" value="IRVINGTON POLICE">
             </div>
             <div class="form-group">
-                <label for="contents">Contents Label</label>
+                <label for="contents">Contents</label>
                 <input type="text" id="contents" value="RAPE KITS">
             </div>
             <div class="form-group">
-                <label for="boxInfo">Box Info / Identifier</label>
+                <label for="boxInfo">Box Info</label>
                 <input type="text" id="boxInfo" value="2026 BOX 76 #1">
             </div>
             <div class="form-group">
                 <label for="barcode">Barcode Value</label>
-                <input type="text" id="barcode" value="AIRV01PT">
+                <input type="text" id="barcode" value="BAR1234">
             </div>
             <div class="form-group">
                 <label for="qrCode">QR Code Value</label>
-                <input type="text" id="qrCode" value="QR-123456">
+                <input type="text" id="qrCode" value="QR123">
             </div>
 
+            <!-- Options -->
             <div class="form-group">
-                <label for="orientation">Label Orientation</label>
+                <label for="orientation">Orientation</label>
                 <select id="orientation">
                     <option value="portrait" selected>Portrait</option>
                     <option value="landscape">Landscape</option>
                 </select>
             </div>
-
             <div class="form-group">
-                <label for="fontSize">Font Size</label>
-                <input type="range" id="fontSize" min="14" max="72" value="36">
-            </div>
-
-            <div class="form-group">
-                <label>Enable Options</label>
-                <div>
-                    <label><input type="checkbox" id="includeBarcode" checked /> Include Barcode</label>
-                </div>
-                <div>
-                    <label><input type="checkbox" id="includeQRCode" checked /> Include QR Code</label>
-                </div>
+                <label>Options</label>
+                <div><input type="checkbox" id="toggleBarcode" checked> Include Barcode</div>
+                <div><input type="checkbox" id="toggleQRCode" checked> Include QR Code</div>
             </div>
         </div>
 
-        <!-- Actions -->
         <div class="card">
+            <!-- ZPL Output -->
             <textarea id="zplOutput" readonly></textarea>
             <div class="button-row">
-                <button class="btn-secondary" onclick="copyCode()">Copy Code</button>
-                <button class="btn-primary" onclick="downloadFile()">Download .ZPL</button>
+                <button class="btn-primary" onclick="downloadFile()">Download ZPL</button>
+                <button class="btn-secondary" onclick="copyZPL()">Copy to Clipboard</button>
             </div>
         </div>
     </div>
 
     <script>
-        const canvas = document.getElementById('labelCanvas');
-        const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById("labelCanvas");
+        const ctx = canvas.getContext("2d");
 
-        const deptInput = document.getElementById('dept');
-        const contentsInput = document.getElementById('contents');
-        const boxInput = document.getElementById('boxInfo');
-        const barcodeInput = document.getElementById('barcode');
-        const qrCodeInput = document.getElementById('qrCode');
-        const zplOutput = document.getElementById('zplOutput');
-        const fontSizeInput = document.getElementById('fontSize');
-        const includeQRCode = document.getElementById('includeQRCode');
-        const includeBarcode = document.getElementById('includeBarcode');
-        const orientationSelect = document.getElementById('orientation');
+        // Inputs
+        const inputs = {
+            dept: document.getElementById("dept"),
+            contents: document.getElementById("contents"),
+            boxInfo: document.getElementById("boxInfo"),
+            barcode: document.getElementById("barcode"),
+            qrCode: document.getElementById("qrCode"),
+            orientation: document.getElementById("orientation"),
+            toggleBarcode: document.getElementById("toggleBarcode"),
+            toggleQRCode: document.getElementById("toggleQRCode")
+        };
+        const zplOutput = document.getElementById("zplOutput");
 
-        function drawLabel() {
-            const fontSize = parseInt(fontSizeInput.value, 10);
-            const orientation = orientationSelect.value;
-
-            const dept = deptInput.value.toUpperCase();
-            const contents = contentsInput.value.toUpperCase();
-            const boxInfo = boxInput.value.toUpperCase();
-            const barcode = barcodeInput.value.toUpperCase();
-            const qrCode = qrCodeInput.value.toUpperCase();
+        // Draw and Update Preview Function
+        function drawPreview() {
+            const { dept, contents, boxInfo, barcode, qrCode, orientation, toggleBarcode, toggleQRCode } = inputs;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Canvas rotates if orientation changes.
-            ctx.save();
-            if (orientation === "landscape") {
-                ctx.rotate(-Math.PI / 2);
-                ctx.translate(-canvas.height, 0);
-            }
-
-            ctx.strokeStyle = '#000';
+            // Border
+            ctx.strokeStyle = "black";
             ctx.lineWidth = 4;
             ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-            ctx.font = `${fontSize}px sans-serif`;
-            ctx.fillText(dept, 20, 60);
-            ctx.fillText(contents, 20, 120);
-            ctx.fillText(boxInfo, 20, 180);
-
-            // Barcode
-            if (includeBarcode.checked) {
-                ctx.fillText(`Barcode: ${barcode}`, 20, 240);
-            }
-
-            // QR Code
-            if (includeQRCode.checked) {
-                ctx.fillText(`QR: ${qrCode}`, 20, 300);
-            }
-            ctx.restore();
-
-            // ZPL Code
-            let zpl = `
-^XA
-^PW812
-^LL1015
-^CI28
-
-^FO15,15^GB782,985,6^FS
-^FO20,60^A0N,${fontSize},${fontSize}^FD${dept}^FS
-^FO20,120^A0N,${fontSize},${fontSize}^FD${contents}^FS
-^FO20,180^A0N,${fontSize},${fontSize}^FD${boxInfo}^FS`;
-
-            if (includeBarcode.checked) {
-                zpl += `
-^FO20,240^BY2
-^B3N,N,80,Y,N
-^FD${barcode}^FS`;
-            }
-
-            if (includeQRCode.checked) {
-                zpl += `
-^FO20,300^BQN,2,10^FDQA,${qrCode}^FS`;
-            }
-
-            zpl += `
-^XZ`;
-
-            zplOutput.value = zpl;
+            // Example Centering Content
+            ctx.font = "18px Arial";
+            ctx.fillText(dept.value, canvas.width / 2, 70);
         }
 
-        function copyCode() {
-            navigator.clipboard.writeText(zplOutput.value);
-        }
-
-        function downloadFile() {
-            const blob = new Blob([zplOutput.value], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'label.zpl';
-            link.click();
-        }
-
-        [deptInput, contentsInput, boxInput, barcodeInput, qrCodeInput, fontSizeInput, includeBarcode, includeQRCode, orientationSelect].forEach(input => {
-            input.addEventListener('input', drawLabel);
-        });
-
-        drawLabel();
+        drawPreview();
     </script>
 </body>
 </html>
