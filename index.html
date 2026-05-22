@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ZPL Label Generator</title>
-
     <style>
         :root {
             --bg-color: #f3f4f6;
@@ -12,14 +11,13 @@
             --primary: #2563eb;
             --primary-hover: #1d4ed8;
             --text: #1f2937;
-            --border: #e5e7eb;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
         }
 
         body {
@@ -41,163 +39,224 @@
         }
 
         header { text-align: center; }
-        h1 { font-size: 1.5rem; color: #111827; }
-        p.subtitle { font-size: 0.85rem; color: #6b7280; margin-top: 4px; }
+        h1 { font-size: 1.5rem; }
+        label { font-weight: bold; margin-top: 8px; display: block; }
 
         .card {
-            background: var(--card-bg);
-            border-radius: 12px;
+            background-color: var(--card-bg);
+            border-radius: 8px;
             padding: 16px;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--border);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
 
         .preview-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #e5e7eb;
-            padding: 12px;
+            width: 100%;
+            height: 400px;
+            background-color: white;
+            border: 1px solid gray;
             border-radius: 8px;
+            position: relative;
         }
 
         canvas {
-            background: white;
-            max-width: 100%;
-            height: auto;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 100%;
+            height: 100%;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 12px;
+            border: 1px solid #ddd;
             border-radius: 4px;
         }
 
-        .form-group {
-            margin-bottom: 12px;
+        textarea {
+            height: 100px;
+            resize: none;
+            font-family: monospace;
         }
 
-        label {
-            display: block;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-            color: #4b5563;
-        }
-
-        input, select {
-            width: 100%;
-            padding: 10px 12px;
-            font-size: 1rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-        }
-
-        .button-row {
+        .button-group {
             display: flex;
-            gap: 8px;
-            margin-top: 12px;
+            justify-content: space-between;
         }
 
         button {
-            padding: 12px;
-            font-size: 0.95rem;
-            font-weight: 600;
+            background-color: var(--primary);
+            color: white;
+            padding: 8px 16px;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            transition: background 0.15s ease;
-            display: flex;
-            align-items: center;
         }
 
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-primary:hover { background: var(--primary-hover); }
-        .btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid var(--border); }
-        .btn-secondary:hover { background: #e5e7eb; }
-
-        textarea {
-            width: 100%;
-            height: 120px;
-            font-family: monospace;
-            font-size: 0.8rem;
-            padding: 8px;
-            border-radius: 6px;
-            background: #f9fafb;
-            margin-top: 8px;
+        button:hover {
+            background-color: var(--primary-hover);
         }
+
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>ZPL Label Generator</h1>
-            <p class="subtitle">Customizable Label Layout and Output</p>
+            <h1>ZPL Label Preview & Generator</h1>
         </header>
 
+        <!-- Live Preview Section -->
         <div class="card">
-            <div class="form-group">
-                <label for="dept">Department Name</label>
-                <input type="text" id="dept" value="IRVINGTON POLICE">
-            </div>
-            <div class="form-group">
-                <label for="content">Contents</label>
-                <input type="text" id="content" value="RAPE KITS">
-            </div>
-            <div class="form-group">
-                <label for="boxinfo">Box Info</label>
-                <input type="text" id="boxinfo" value="2026 BOX 76 #2">
-            </div>
-            <div class="form-group">
-                <label for="barcode">Barcode Value</label>
-                <input type="text" id="barcode" value="AIRV01PU">
-            </div>
-            <div class="form-group">
-                <label for="orientation">Orientation</label>
-                <select id="orientation">
-                    <option value="portrait">Portrait</option>
-                    <option value="landscape">Landscape</option>
-                </select>
+            <label>Label Preview</label>
+            <div class="preview-container">
+                <canvas id="labelCanvas"></canvas>
             </div>
         </div>
 
+        <!-- Label Details Section -->
         <div class="card">
+            <label for="dept">Department Name</label>
+            <input type="text" id="dept" value="IRVINGTON POLICE" />
+
+            <label for="content">Contents</label>
+            <input type="text" id="content" value="RAPE KITS" />
+
+            <label for="boxinfo">Box Info</label>
+            <input type="text" id="boxinfo" value="2026 BOX 76 #2" />
+
+            <label for="barcode">Barcode Value</label>
+            <input type="text" id="barcode" value="AIRV01PU" />
+
+            <label for="qrCodeValue">QR Code Value</label>
+            <input type="text" id="qrCodeValue" value="QR-123456" />
+
+            <label for="orientation">Orientation</label>
+            <select id="orientation">
+                <option value="portrait">Portrait</option>
+                <option value="landscape">Landscape</option>
+            </select>
+        </div>
+
+        <!-- Output Section -->
+        <div class="card">
+            <label for="zplOutput">Generated ZPL Code</label>
             <textarea id="zplOutput" readonly></textarea>
-            <button class="btn-primary" onclick="generateZPL()">Generate ZPL</button>
+            <div class="button-group">
+                <button onclick="downloadZPL()">Download ZPL</button>
+                <button onclick="copyZPL()">Copy to Clipboard</button>
+            </div>
         </div>
     </div>
 
     <script>
-        const zplOutput = document.getElementById('zplOutput');
+        // Grab Canvas and Context
+        const canvas = document.getElementById("labelCanvas");
+        const ctx = canvas.getContext("2d");
 
+        // Inputs
+        const deptInput = document.getElementById("dept");
+        const contentInput = document.getElementById("content");
+        const boxinfoInput = document.getElementById("boxinfo");
+        const barcodeInput = document.getElementById("barcode");
+        const qrCodeInput = document.getElementById("qrCodeValue");
+        const orientationInput = document.getElementById("orientation");
+        const zplOutput = document.getElementById("zplOutput");
+
+        canvas.width = 400;
+        canvas.height = 500;
+
+        // Draw Preview on Canvas
+        function drawPreview() {
+            const orientation = orientationInput.value;
+            const dept = deptInput.value.toUpperCase();
+            const contents = contentInput.value.toUpperCase();
+            const boxinfo = boxinfoInput.value.toUpperCase();
+            const barcode = barcodeInput.value.toUpperCase();
+            const qrCode = qrCodeInput.value.toUpperCase();
+
+            // Clear Canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Adjust Canvas Orientation
+            if (orientation === "landscape") {
+                ctx.rotate(Math.PI / 2);
+                ctx.translate(0, -canvas.width);
+            }
+
+            // Draw Border
+            ctx.strokeStyle = "black";
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
+
+            // Draw Department Name
+            ctx.save();
+            ctx.font = "bold 20px Arial";
+            ctx.textAlign = "center";
+            ctx.fillStyle = "black";
+            ctx.fillText(dept, canvas.width / 2, 50);
+            ctx.restore();
+
+            // Draw Contents
+            ctx.save();
+            ctx.font = "bold 28px Arial";
+            ctx.fillText(contents, canvas.width / 2, 150);
+            ctx.restore();
+
+            // Draw Box Info
+            ctx.save();
+            ctx.font = "bold 24px Arial";
+            ctx.fillText(boxinfo, canvas.width / 2, 250);
+            ctx.restore();
+
+            // Draw Barcode (Mock)
+            ctx.fillText(`| | | | | Barcode: ${barcode} | | | | |`, canvas.width / 2, 350);
+
+            // Draw QR Code (Mock)
+            ctx.fillText(`[QR: ${qrCode}]`, canvas.width / 2, 450);
+        }
+
+        // Generate ZPL Output
         function generateZPL() {
-            const dept = document.getElementById('dept').value.toUpperCase();
-            const content = document.getElementById('content').value.toUpperCase();
-            const boxinfo = document.getElementById('boxinfo').value.toUpperCase();
-            const barcode = document.getElementById('barcode').value.toUpperCase();
-            const orientation = document.getElementById('orientation').value;
+            const orientation = orientationInput.value === "portrait" ? "N" : "R";
+            const dept = deptInput.value.toUpperCase();
+            const contents = contentInput.value.toUpperCase();
+            const boxinfo = boxinfoInput.value.toUpperCase();
+            const barcode = barcodeInput.value.toUpperCase();
+            const qrCode = qrCodeInput.value.toUpperCase();
 
-            // ZPL Code
-            let zpl = `^XA\n^PW812\n^LL1015\n^LH0,0\n^CI28\n\n`;
-
-            // Add Border
-            zpl += `^FO15,15^GB782,985,6^FS\n\n`;
-
-            // Add Department Name
-            zpl += `^FO680,40\n^A0R,92,92\n^FB900,1,0,C\n^FD${dept}^FS\n\n`;
-
-            // Add Contents
-            zpl += `^FO500,40\n^A0R,130,130\n^FB900,1,0,C\n^FD${content}^FS\n\n`;
-
-            // Add Box Info
-            zpl += `^FO250,40\n^A0R,125,125\n^FB950,1,0,C\n^FD${boxinfo}^FS\n\n`;
-
-            // Add Barcode
-            zpl += `^BY4,3,180\n^FO70,270\n^BCR,180,Y,N,N\n^FD${barcode}^FS\n\n`;
-
-            // Add QR Code
-            zpl += `^FO140,750\n^BQN,2,10\n^FDLA,QR-${barcode}^FS\n\n`;
-
+            let zpl = `^XA\n^PW812\n^LL1015\n^CI28\n^FO15,15^GB782,985,6^FS\n`;
+            zpl += `^FO680,40^A0${orientation},92,92^FB900,1,0,C^FD${dept}^FS\n`;
+            zpl += `^FO500,40^A0${orientation},130,130^FB950,1,0,C^FD${contents}^FS\n`;
+            zpl += `^FO250,40^A0${orientation},125,125^FB950,1,0,C^FD${boxinfo}^FS\n`;
+            zpl += `^BY4,3,180^FO70,270^BCR,180,Y,N,N^FD${barcode}^FS\n`;
+            zpl += `^FO140,750^BQN,2,10^FDLA,${qrCode}^FS\n`;
             zpl += `^XZ`;
 
             zplOutput.value = zpl;
+            drawPreview();
         }
+
+        // ZPL Download and Copy Functions
+        function downloadZPL() {
+            const blob = new Blob([zplOutput.value], { type: "text/plain" });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = "label.zpl";
+            link.click();
+        }
+
+        function copyZPL() {
+            navigator.clipboard.writeText(zplOutput.value);
+            alert("Copied ZPL to Clipboard!");
+        }
+
+        // Event Listeners
+        [deptInput, contentInput, boxinfoInput, barcodeInput, qrCodeInput, orientationInput].forEach(input => {
+            input.addEventListener("input", generateZPL);
+        });
+
+        // Initial Render
+        generateZPL();
     </script>
 </body>
 </html>
