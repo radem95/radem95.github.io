@@ -81,7 +81,7 @@
             color: #4b5563;
         }
 
-        input {
+        input, select {
             width: 100%;
             padding: 10px 12px;
             font-size: 1rem;
@@ -128,7 +128,6 @@
     <div class="container">
         <header>
             <h1>ZPL Label Generator</h1>
-            <p class="subtitle">With QR Codes</p>
         </header>
 
         <div class="card">
@@ -160,11 +159,33 @@
                 <label for="qrCode">QR Code Value</label>
                 <input type="text" id="qrCode" value="QR-123456">
             </div>
+
+            <div class="form-group">
+                <label for="orientation">Label Orientation</label>
+                <select id="orientation">
+                    <option value="portrait" selected>Portrait</option>
+                    <option value="landscape">Landscape</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="fontSize">Font Size</label>
+                <input type="range" id="fontSize" min="14" max="72" value="36">
+            </div>
+
+            <div class="form-group">
+                <label>Enable Options</label>
+                <div>
+                    <label><input type="checkbox" id="includeBarcode" checked /> Include Barcode</label>
+                </div>
+                <div>
+                    <label><input type="checkbox" id="includeQRCode" checked /> Include QR Code</label>
+                </div>
+            </div>
         </div>
 
-        <!-- Actions Section -->
+        <!-- Actions -->
         <div class="card">
-            <label>Generated ZPL Output</label>
             <textarea id="zplOutput" readonly></textarea>
             <div class="button-row">
                 <button class="btn-secondary" onclick="copyCode()">Copy Code</button>
@@ -183,8 +204,15 @@
         const barcodeInput = document.getElementById('barcode');
         const qrCodeInput = document.getElementById('qrCode');
         const zplOutput = document.getElementById('zplOutput');
+        const fontSizeInput = document.getElementById('fontSize');
+        const includeQRCode = document.getElementById('includeQRCode');
+        const includeBarcode = document.getElementById('includeBarcode');
+        const orientationSelect = document.getElementById('orientation');
 
         function drawLabel() {
+            const fontSize = parseInt(fontSizeInput.value, 10);
+            const orientation = orientationSelect.value;
+
             const dept = deptInput.value.toUpperCase();
             const contents = contentsInput.value.toUpperCase();
             const boxInfo = boxInput.value.toUpperCase();
@@ -193,104 +221,80 @@
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            ctx.strokeStyle = '#000000';
+            // Canvas rotates if orientation changes.
+            ctx.save();
+            if (orientation === "landscape") {
+                ctx.rotate(-Math.PI / 2);
+                ctx.translate(-canvas.height, 0);
+            }
+
+            ctx.strokeStyle = '#000';
             ctx.lineWidth = 4;
             ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
 
-            ctx.save();
-            ctx.translate(340, canvas.height / 2);
-            ctx.rotate(Math.PI / 2);
-            ctx.font = 'bold 36px monospace';
-            ctx.fillText(dept, 0, 0);
-            ctx.restore();
+            ctx.font = `${fontSize}px sans-serif`;
+            ctx.fillText(dept, 20, 60);
+            ctx.fillText(contents, 20, 120);
+            ctx.fillText(boxInfo, 20, 180);
 
-            ctx.save();
-            ctx.translate(250, canvas.height / 2);
-            ctx.rotate(Math.PI / 2);
-            ctx.font = 'bold 50px monospace';
-            ctx.fillText(contents, 0, 0);
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(130, canvas.height / 2);
-            ctx.rotate(Math.PI / 2);
-            ctx.font = 'bold 45px monospace';
-            ctx.fillText(boxInfo, 0, 0);
-            ctx.restore();
-
-            ctx.save();
-            ctx.translate(50, canvas.height / 2 - 50);
-            ctx.rotate(Math.PI / 2);
-            ctx.fillStyle = '#000000';
-            for (let i = -70; i < 70; i += 4) {
-                let width = (i % 3 === 0) ? 3 : 1;
-                ctx.fillRect(i, -60, width, 75);
+            // Barcode
+            if (includeBarcode.checked) {
+                ctx.fillText(`Barcode: ${barcode}`, 20, 240);
             }
-            ctx.font = '14px monospace';
-            ctx.fillText(barcode, 0, 30);
+
+            // QR Code
+            if (includeQRCode.checked) {
+                ctx.fillText(`QR: ${qrCode}`, 20, 300);
+            }
             ctx.restore();
 
-            ctx.save();
-            ctx.translate(200, canvas.height - 90);
-            ctx.fillRect(-25, 20, 50, 50);
-            ctx.restore();
-
-            const zpl = `
+            // ZPL Code
+            let zpl = `
 ^XA
 ^PW812
 ^LL1015
 ^CI28
 
 ^FO15,15^GB782,985,6^FS
+^FO20,60^A0N,${fontSize},${fontSize}^FD${dept}^FS
+^FO20,120^A0N,${fontSize},${fontSize}^FD${contents}^FS
+^FO20,180^A0N,${fontSize},${fontSize}^FD${boxInfo}^FS`;
 
-^FO680,40
-^A0R,92,92
-^FB900,1,0,C
-^FD${dept}^FS
+            if (includeBarcode.checked) {
+                zpl += `
+^FO20,240^BY2
+^B3N,N,80,Y,N
+^FD${barcode}^FS`;
+            }
 
-^FO500,40
-^A0R,130,130
-^FB950,1,0,C
-^FD${contents}^FS
+            if (includeQRCode.checked) {
+                zpl += `
+^FO20,300^BQN,2,10^FDQA,${qrCode}^FS`;
+            }
 
-^FO250,40
-^A0R,125,125
-^FB950,1,0,C
-^FD${boxInfo}^FS
+            zpl += `
+^XZ`;
 
-^BY4,3,180
-^FO70,270
-^BCR,180,Y,N,N
-^FD${barcode}^FS
-
-^FO140,750
-^BQN,2,10
-^FDLA,${qrCode}^FS
-^XZ
-`;
             zplOutput.value = zpl;
         }
 
         function copyCode() {
-            zplOutput.select();
-            document.execCommand("copy");
+            navigator.clipboard.writeText(zplOutput.value);
         }
 
         function downloadFile() {
             const blob = new Blob([zplOutput.value], { type: 'text/plain' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'label.zpl';
-            a.click();
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'label.zpl';
+            link.click();
         }
 
-        deptInput.addEventListener('input', drawLabel);
-        contentsInput.addEventListener('input', drawLabel);
-        boxInput.addEventListener('input', drawLabel);
-        barcodeInput.addEventListener('input', drawLabel);
-        qrCodeInput.addEventListener('input', drawLabel);
+        [deptInput, contentsInput, boxInput, barcodeInput, qrCodeInput, fontSizeInput, includeBarcode, includeQRCode, orientationSelect].forEach(input => {
+            input.addEventListener('input', drawLabel);
+        });
 
-        window.onload = drawLabel;
+        drawLabel();
     </script>
 </body>
 </html>
