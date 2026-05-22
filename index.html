@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Label Editor</title>
+  <title>Label Editor with Live Preview</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -13,7 +13,7 @@
     }
 
     .container {
-      max-width: 500px;
+      max-width: 700px;
       margin: 20px auto;
       padding: 10px;
     }
@@ -25,6 +25,7 @@
     form {
       display: flex;
       flex-direction: column;
+      margin-bottom: 20px;
     }
 
     label {
@@ -60,41 +61,86 @@
       background-color: #0056b3;
     }
 
-    .zpl-output {
+    .preview-container {
       margin-top: 20px;
-      background: #f4f4f4;
       padding: 10px;
-      border-radius: 5px;
-      font-family: "Courier New", monospace;
-      white-space: pre-wrap;
-      word-wrap: break-word;
+      border: 2px dashed #007BFF;
+      border-radius: 8px;
+      background: #f9f9f9;
+    }
+
+    .label-preview {
+      position: relative;
+      width: 400px;
+      height: 250px;
+      margin: 0 auto;
+      background: white;
+      border: 2px solid black;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+    }
+
+    .label-preview h2,
+    .label-preview h3,
+    .label-preview p {
+      margin: 0;
+      text-align: center;
+    }
+
+    .barcode {
+      height: 60px;
+      width: 90%;
+      background: repeating-linear-gradient(90deg, black 0, black 2px, white 2px, white 4px);
+      margin: 10px 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Label Editor</h1>
+    <h1>Label Editor with Live Preview</h1>
     <form id="labelForm">
       <label for="title">Title</label>
-      <input type="text" id="title" value="IRVINGTON POLICE" />
+      <input type="text" id="title" value="IRVINGTON POLICE" oninput="updatePreview()" />
 
       <label for="subtitle">Subtitle</label>
-      <input type="text" id="subtitle" value="RAPE KITS" />
+      <input type="text" id="subtitle" value="RAPE KITS" oninput="updatePreview()" />
 
       <label for="footer">Footer</label>
-      <input type="text" id="footer" value="2026 BOX 76 #2" />
+      <input type="text" id="footer" value="2026 BOX 76 #2" oninput="updatePreview()" />
 
       <label for="barcode">Barcode</label>
-      <input type="text" id="barcode" value="AIRV01PU" />
+      <input type="text" id="barcode" value="AIRV01PU" oninput="updatePreview()" />
 
-      <button type="button" onclick="generateZPL()">Generate Label</button>
+      <button type="button" onclick="generateZPL()">Generate ZPL</button>
     </form>
 
     <h2>Generated ZPL</h2>
     <textarea id="zplOutput" readonly></textarea>
+
+    <div class="preview-container">
+      <h2>Live Label Preview</h2>
+      <div class="label-preview" id="labelPreview">
+        <h2 id="previewTitle">IRVINGTON POLICE</h2>
+        <h3 id="previewSubtitle">RAPE KITS</h3>
+        <div class="barcode" title="Sample Barcode"></div>
+        <p id="previewFooter">2026 BOX 76 #2</p>
+      </div>
+    </div>
   </div>
 
   <script>
+    function updatePreview() {
+      const title = document.getElementById("title").value;
+      const subtitle = document.getElementById("subtitle").value;
+      const footer = document.getElementById("footer").value;
+
+      document.getElementById("previewTitle").textContent = title;
+      document.getElementById("previewSubtitle").textContent = subtitle;
+      document.getElementById("previewFooter").textContent = footer;
+    }
+
     function generateZPL() {
       const title = document.getElementById("title").value;
       const subtitle = document.getElementById("subtitle").value;
@@ -135,6 +181,9 @@
 
       document.getElementById("zplOutput").value = zpl;
     }
+
+    // Initialize the preview on page load
+    updatePreview();
   </script>
 </body>
 </html>
